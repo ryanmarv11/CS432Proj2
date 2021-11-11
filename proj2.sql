@@ -1,6 +1,8 @@
 CREATE OR REPLACE PACKAGE proj2 AS
+	function new_log_id return varchar2;
 	procedure insert_student(sid in students.sid%type, firstname in students.firstname%type, lastname in students.lastname%type, status in students.status%type, gpa in students.gpa%type,
 email in students.email%type);
+	procedure show_logs;
 	procedure show_students;
 	procedure show_courses;
 	procedure show_prerequisites;
@@ -14,12 +16,26 @@ end proj2;
 show errors
 
 CREATE OR REPLACE PACKAGE BODY proj2 AS
+		function new_log_id
+			RETURN varchar2 IS
+			cnt varchar2(100) := '';
+		BEGIN
+			select sid into cnt from (select sid from students order by sid desc) where rownum = 1;
+			return (cnt);
+		END new_log_id;
 		procedure insert_student(sid in students.sid%type, firstname in students.firstname%type, lastname in students.lastname%type, status in students.status%type, gpa in students.gpa%type,
 		email in students.email%type) AS
 		BEGIN
 			INSERT INTO students("SID", "FIRSTNAME", "LASTNAME", "STATUS", "GPA", "EMAIL") VALUES(sid, firstname, lastname, status, gpa, email);
 		END insert_student;
-
+		procedure show_logs AS
+		BEGIN
+			FOR cursor1 IN (SELECT * FROM logs)
+				LOOP
+					dbms_output.put_line(cursor1.logid || ',' || cursor1.who || ',' || cursor1.time || ',' || cursor1.table_name || ',' || cursor1.operation || ',' 
+					|| cursor1.key_value);
+				END LOOP;
+		END show_logs;
 		procedure show_students AS
 		BEGIN
 			FOR cursor1 IN (SELECT * FROM students)
