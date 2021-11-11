@@ -1,5 +1,5 @@
-CREATE OR REPLACE PACKAGE proj2 AS
-	function new_log_id return varchar2;
+	CREATE OR REPLACE PACKAGE proj2 AS
+	function new_log_id return number;
 	procedure insert_student(sid in students.sid%type, firstname in students.firstname%type, lastname in students.lastname%type, status in students.status%type, gpa in students.gpa%type,
 email in students.email%type);
 	procedure show_logs;
@@ -17,11 +17,12 @@ show errors
 
 CREATE OR REPLACE PACKAGE BODY proj2 AS
 		function new_log_id
-			RETURN varchar2 IS
-			cnt varchar2(100) := '';
+			RETURN number IS
+			cnt number;
+			strap varchar2(20) := '22';
 		BEGIN
-			select sid into cnt from (select sid from students order by sid desc) where rownum = 1;
-			return (cnt);
+			select logid into cnt from (select logid from logs order by logid desc) where rownum = 1;
+			return (cnt+1);
 		END new_log_id;
 		procedure insert_student(sid in students.sid%type, firstname in students.firstname%type, lastname in students.lastname%type, status in students.status%type, gpa in students.gpa%type,
 		email in students.email%type) AS
@@ -32,7 +33,7 @@ CREATE OR REPLACE PACKAGE BODY proj2 AS
 		BEGIN
 			FOR cursor1 IN (SELECT * FROM logs)
 				LOOP
-					dbms_output.put_line(cursor1.logid || ',' || cursor1.who || ',' || cursor1.time || ',' || cursor1.table_name || ',' || cursor1.operation || ',' 
+					dbms_output.put_line(lpad(to_char(cursor1.logid),4,'0') || ',' || cursor1.who || ',' || cursor1.time || ',' || cursor1.table_name || ',' || cursor1.operation || ',' 
 					|| cursor1.key_value);
 				END LOOP;
 		END show_logs;
@@ -72,7 +73,20 @@ CREATE OR REPLACE PACKAGE BODY proj2 AS
 				END LOOP;
 		END show_enrollments;
 		procedure print_info(si in students.sid%type) AS
+			cursor c1 is select * from students where sid = si;
+			c1_rec c1%rowtype;
+			cursor c3 is select * from students inner join enrollments on students.sid = enrollments.sid where enrollments.sid = si;
+			c3_rec c3%rowtype;
 		BEGIN
+			OPEN c1;
+			FETCH c1 INTO c1_rec;
+			OPEN c3;
+			FETCH c3 INTO c3_rec;
+			IF c1%notfound = true THEN
+				dbms_output.put_line('The sid is invalid');
+			ELSIF c3%notfound = true THEN
+				dbms_output.put_line('The student has not taken any course.');
+			END IF;
 			FOR c2 IN (SELECT * FROM students s INNER JOIN (enrollments e INNER JOIN classes c USING(classid)) USING(sid) WHERE sid = si)
 				LOOP	
 					dbms_output.put_line(c2.sid || ',' || c2.firstname || ',' || c2.lastname || ',' || c2.gpa || ',' || c2.classid || ',' || CONCAT(c2.dept_code, c2.course_no) 
