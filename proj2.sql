@@ -11,6 +11,7 @@ email in students.email%type);
 	procedure print_info(si in students.sid%type);
 	procedure print_pre(code in prerequisites.dept_code%type, no in prerequisites.course_no%type);
 	procedure print_enr(cid in classes.classid%type);
+procedure subp(si in enrollments.sid%type); 
 end proj2;
 /
 show errors
@@ -107,8 +108,11 @@ CREATE OR REPLACE PACKAGE BODY proj2 AS
 			CLOSE c1;
 		END print_pre;
 		procedure print_enr(cid in classes.classid%type) AS
-			cursor c1 is SELECT s.sid as studentsid, e.sid as esid, c.classid as cclassid, c.semester, c.year, s.firstname, s.lastname, s.email FROM classes c INNER JOIN 
-				(students s INNER JOIN enrollments e on s.sid = e.sid) ON c.classid = e.classid where cid = c.classid;
+			cursor c1 is SELECT * from
+			(enrollments inner join students using(sid))
+			inner join 
+			(courses inner join classes using(dept_code, course_no)) using (classid)
+			where classid = cid;
 			c1_rec c1%rowtype;
 			cursor c2 is SELECT * from classes where classes.classid = cid;
 			c2_rec c2%rowtype;
@@ -117,24 +121,29 @@ CREATE OR REPLACE PACKAGE BODY proj2 AS
 		BEGIN
 			OPEN c2;
 			FETCH c2 into c2_rec;
-			IF c2%notfound = true THEN
-				dbms_output.put_line('The cid is invalid.');
-			END IF;
 			OPEN c3;
 			FETCH c3 into c3_rec;
-			IF c3%notfound = true THEN
-				dbms_output.put_line('No student is enrolled in the class.');
-			END IF;
 			OPEN c1;
 			FETCH c1 into c1_rec;
-		
-			WHILE c1%found = true
-				LOOP
-					dbms_output.put_line(c1_rec.studentsid || c1_rec.firstname || c1_rec.lastname || c1_rec.email || c1_rec.cclassid 
-					|| c1_rec.semester || c1_rec.year);
-					FETCH c1 INTO c1_rec;
+			IF c2%notfound = true THEN
+				dbms_output.put_line('The cid is invalid.');
+			ELSIF c3%notfound = true THEN
+				dbms_output.put_line('No student is enrolled in the class.');
+			ELSE
+				WHILE c1%found = true
+					LOOP
+						dbms_output.put_line(c1_rec.sid || c1_rec.firstname || c1_rec.lastname || c1_rec.email 
+						|| c1_rec.classid || c1_rec.semester || c1_rec.year);
+						FETCH c1 INTO c1_rec;
 				END LOOP;
+			END IF;
 		END print_enr;
+		procedure subp(si in enrollments.sid%type) AS
+			cnt number;
+		BEGIN
+			select count(sid) into cnt from enrollments where enrollments.sid = si;
+			dbms_output.put_line(cnt);
+		END subp;
 	END proj2;
 /
 show errors
