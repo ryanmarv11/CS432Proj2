@@ -7,6 +7,8 @@ email in students.email%type);
 	procedure show_classes;
 	procedure show_enrollments;
 	procedure print_info(si in students.sid%type);
+	procedure print_pre(code in prerequisites.dept_code%type, no in prerequisites.course_no%type);
+	procedure print_enr(cid in classes.classid%type);
 end proj2;
 /
 show errors
@@ -61,6 +63,48 @@ CREATE OR REPLACE PACKAGE BODY proj2 AS
 					|| ',' || c2.semester || ',' || c2.year);
 				END LOOP;
 		END print_info;
+		procedure print_pre(code in prerequisites.dept_code % type, no in prerequisites.course_no%type) AS
+			cursor c1 is SELECT DISTINCT * FROM prerequisites p WHERE p.dept_code = code AND p.course_no = no;			
+			c1_rec c1%rowtype;
+		BEGIN
+			OPEN c1;
+			FETCH c1 INTO c1_rec;
+			WHILE c1%found = true
+			 	LOOP
+					dbms_output.put_line(CONCAT(c1_rec.pre_dept_code , c1_rec.pre_course_no));
+					FETCH c1 INTO c1_rec;
+				END LOOP;
+			CLOSE c1;
+		END print_pre;
+		procedure print_enr(cid in classes.classid%type) AS
+			cursor c1 is SELECT s.sid as studentsid, e.sid as esid, c.classid as cclassid, c.semester, c.year, s.firstname, s.lastname, s.email FROM classes c INNER JOIN 
+				(students s INNER JOIN enrollments e on s.sid = e.sid) ON c.classid = e.classid where cid = c.classid;
+			c1_rec c1%rowtype;
+			cursor c2 is SELECT * from classes where classes.classid = cid;
+			c2_rec c2%rowtype;
+			cursor c3 is SELECT * FROM enrollments e where e.classid = cid; 
+			c3_rec c3%rowtype;
+		BEGIN
+			OPEN c2;
+			FETCH c2 into c2_rec;
+			IF c2%notfound = true THEN
+				dbms_output.put_line('The cid is invalid.');
+			END IF;
+			OPEN c3;
+			FETCH c3 into c3_rec;
+			IF c3%notfound = true THEN
+				dbms_output.put_line('No student is enrolled in the class.');
+			END IF;
+			OPEN c1;
+			FETCH c1 into c1_rec;
+		
+			WHILE c1%found = true
+				LOOP
+					dbms_output.put_line(c1_rec.studentsid || c1_rec.firstname || c1_rec.lastname || c1_rec.email || c1_rec.cclassid 
+					|| c1_rec.semester || c1_rec.year);
+					FETCH c1 INTO c1_rec;
+				END LOOP;
+		END print_enr;
 	END proj2;
 /
 show errors
