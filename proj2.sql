@@ -13,6 +13,7 @@ email in students.email%type);
 	procedure print_enr(cid in classes.classid%type);
 	procedure q7_enroll(sid_in in students.sid%type, cid_in classes.classid%type);
 	procedure drop_student(si in students.sid%type, cid in classes.classid%type);
+	procedure delete_student(si in students.sid%type);
 	procedure subp(si in enrollments.sid%type); 
 end proj2;
 /
@@ -240,8 +241,22 @@ CREATE OR REPLACE PACKAGE BODY proj2 AS
 				dbms_output.put_line('student not enrolled in this class');
 			ELSIF c4%notfound = true THEN
 				dbms_output.put_line('drop request rejected due to prerequisite requiremenets');
-			END IF;	
+			ELSE
+				delete from enrollments where sid = si and classid = cid;
+			END IF;
 		END drop_student;
+		procedure delete_student(si in students.sid%type) AS
+			cursor c1 is select * from students where si = sid;
+			c1_rec c1%rowtype;
+		BEGIN
+			OPEN c1;
+			FETCH c1 into c1_rec;
+			IF c1%notfound = true THEN
+				dbms_output.put_line('sid not found');
+			ELSE
+				delete from students where sid = si;
+			END IF;
+		END delete_student;
 		procedure subp(si in enrollments.sid%type) AS
 			cnt number;
 		BEGIN
