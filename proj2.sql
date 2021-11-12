@@ -112,7 +112,7 @@ CREATE OR REPLACE PACKAGE BODY proj2 AS
 				END LOOP;
 		END print_info;
 		procedure print_pre(code in prerequisites.dept_code % type, no in prerequisites.course_no%type) AS
-			cursor c1 is SELECT DISTINCT * FROM prerequisites p WHERE p.dept_code = code AND p.course_no = no;			
+			cursor c1 is SELECT DISTINCT * FROM prerequisites p CONNECT BY PRIOR course_no = pre_course_no and dept_code = pre_dept_code;			
 			c1_rec c1%rowtype;
 		BEGIN
 			OPEN c1;
