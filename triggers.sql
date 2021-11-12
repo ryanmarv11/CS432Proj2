@@ -17,6 +17,15 @@ begin
 	delete from enrollments where sid = :old.sid;
 end delete_to_students;
 /
-create or replace trigger add_to_students
-
+create or replace trigger add_to_enrollments
+before insert on enrollments
+for each row
+begin
+	begin
+		update classes set class_size = class_size + 1 
+		where classid = :NEW.classid;
+	end;
+	
+end add_to_enrollments;	
+/
 show errors;
