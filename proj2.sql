@@ -24,8 +24,13 @@ CREATE OR REPLACE PACKAGE BODY proj2 AS
 		function new_log_id
 			RETURN number IS
 			cnt number;
-			strap varchar2(20) := '22';
+			counted number;
 		BEGIN
+			select count(*) into counted from logs;
+			IF counted = 0 then
+				return 1;
+			END IF;
+			dbms_output.put_line('eh');
 			select logid into cnt from (select logid from logs order by logid desc) where rownum = 1;
 			return (cnt+1);
 		END new_log_id;
@@ -202,6 +207,7 @@ procedure q7_enroll(sid_in in students.sid%type, cid_in in classes.classid%type)
                                 dbms_output.put_line('Prerequisite courses havent been completed.');
                         ELSE
                         	insert into enrollments values(sid_in, cid_in, 'I');
+			END IF;
                 END q7_enroll;
 
 		procedure drop_student(si in students.sid%type, cid in classes.classid%type) AS
@@ -217,7 +223,9 @@ procedure q7_enroll(sid_in in students.sid%type, cid_in in classes.classid%type)
 			(classes inner join prerequisites on classes.dept_code = prerequisites.pre_dept_code and classes.course_no = prerequisites.course_no)
 			using(classid) 
 			where sid = si and classid = cid;
-			c4_rec c4%rowtype; 
+			c4_rec c4%rowtype;
+			class_count number; 
+			student_count number;
 		BEGIN
 			OPEN c1;
 			FETCH c1 into c1_rec;
@@ -233,9 +241,16 @@ procedure q7_enroll(sid_in in students.sid%type, cid_in in classes.classid%type)
 				dbms_output.put_line('classid not found');
 			ELSIF c3%notfound = true THEN
 				dbms_output.put_line('student not enrolled in this class');
-			ELSIF c4%notfound = true THEN
+			ELSIF c4%found = true THEN
 				dbms_output.put_line('drop request rejected due to prerequisite requiremenets');
 			ELSE
+				select count(*) into class_count from enrollments where sid = si;
+				select class_size into student_count from classes where classid = cid;
+				if class_count = 1 then
+					dbms_output.put_line('student enrolled in no class');
+				elsif student_count = 1 then
+					dbms_output.put_line('no student in this class');
+				END IF;
 				delete from enrollments where sid = si and classid = cid;
 			END IF;
 		END drop_student;
